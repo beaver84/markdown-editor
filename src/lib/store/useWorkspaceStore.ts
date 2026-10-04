@@ -136,10 +136,8 @@ export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
     const { activeDocId } = get();
     if (!activeDocId) return { ok: false, error: "활성 문서 없음" };
     try {
-      // 저장 시작 시점의 내용을 고정 — await 중 입력된 글자가 "저장됨"으로 오표시되는 것 방지
-      const content = useEditorStore.getState().doc;
-      await docsRepo.updateContent(activeDocId, content);
-      useEditorStore.getState().markSaved(content); // W2
+      await docsRepo.updateContent(activeDocId, useEditorStore.getState().doc);
+      useEditorStore.getState().markSaved(); // W2
       await refresh(set); // updatedAt 갱신 반영
       return { ok: true };
     } catch (e) {

@@ -18,7 +18,7 @@ interface EditorStore {
   /** 활성 문서 로드 — 버퍼 주입(savedDoc=doc=content, dirty=false) (M3 W1) */
   setBuffer: (content: string) => void;
   /** 저장 성공 후 — savedDoc=doc, dirty=false (워크스페이스 saveActive가 호출) */
-  markSaved: (saved?: string) => void;
+  markSaved: () => void;
   cancel: () => void;
 }
 
@@ -39,10 +39,6 @@ export const useEditorStore = create<EditorStore>((set) => ({
   setInTable: (v) => set((s) => (s.inTable === v ? s : { inTable: v })),
   setBuffer: (content) =>
     set({ doc: content, savedDoc: content, dirty: false, initialized: true }),
-  markSaved: (saved) =>
-    set((s) => {
-      const savedDoc = saved ?? s.doc;
-      return { savedDoc, dirty: s.doc !== savedDoc };
-    }),
+  markSaved: () => set((s) => ({ savedDoc: s.doc, dirty: false })),
   cancel: () => set((s) => ({ doc: s.savedDoc, dirty: false })),
 }));

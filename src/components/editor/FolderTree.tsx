@@ -13,7 +13,6 @@ import {
 import { useRouter } from "next/navigation";
 import { useWorkspaceStore } from "@/lib/store/useWorkspaceStore";
 import { useEditorStore } from "@/lib/store/useEditorStore";
-import { mayDiscard, DISCARD_MESSAGE } from "@/lib/util/dirtyGuard";
 
 const iconBtn =
   "inline-flex h-6 w-6 items-center justify-center rounded text-[color:var(--fg-faint)] hover:text-[color:var(--fg)] hover:bg-[color:var(--border-soft)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--accent)]";
@@ -35,26 +34,19 @@ export function FolderTree() {
   // 문서 클릭 → URL 네비게이션(M6 R6). dirty 보호(FR-010): 미저장 변경 시 확인.
   function openDoc(id: string) {
     if (id === activeDocId) return;
-    if (!mayDiscard(useEditorStore.getState().dirty, () => window.confirm(DISCARD_MESSAGE)))
+    if (
+      useEditorStore.getState().dirty &&
+      !window.confirm("저장하지 않은 변경이 있습니다. 버리고 이동할까요?")
+    )
       return;
     router.push(`/editor/${id}`);
   }
 
   // 새 문서 생성 후 그 문서로 네비게이션(URL 일치)
   async function newDoc(folderId: string) {
-    // 새 문서는 버퍼를 교체하므로 openDoc과 동일하게 dirty 가드
-    if (!mayDiscard(useEditorStore.getState().dirty, () => window.confirm(DISCARD_MESSAGE)))
-      return;
     await createDocument(folderId);
     const id = useWorkspaceStore.getState().activeDocId;
     if (id) router.push(`/editor/${id}`);
-  }
-
-  // 삭제 후 URL을 스토어의 활성 문서와 일치시킨다(없으면 대시보드). 삭제된 id URL 잔류 방지.
-  async function removeAndSync(remove: () => Promise<void>) {
-    await remove();
-    const id = useWorkspaceStore.getState().activeDocId;
-    router.replace(id ? `/editor/${id}` : "/");
   }
 
   if (folders.length === 0) {
@@ -108,7 +100,7 @@ export function FolderTree() {
                 aria-label="폴더 삭제"
                 onClick={() => {
                   if (window.confirm(`'${f.name}' 폴더와 하위 문서를 모두 삭제할까요?`))
-                    removeAndSync(() => deleteFolder(f.id));
+                    deleteFolder(f.id);
                 }}
                 className={iconBtn}
               >
@@ -163,7 +155,7 @@ export function FolderTree() {
                           aria-label="문서 삭제"
                           onClick={() => {
                             if (window.confirm(`'${d.title}' 문서를 삭제할까요?`))
-                              removeAndSync(() => deleteDocument(d.id));
+                              deleteDocument(d.id);
                           }}
                           className={iconBtn}
                         >
